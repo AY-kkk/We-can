@@ -46,15 +46,15 @@ export const resumeApi = {
 
 // ---- 栏目2 笔面 ----
 export const prepApi = {
-  questionBank: async (role: string, keyword: string) => {
+  questionBank: async (track: string, keyword: string) => {
     const { data } = await http.post<QuestionBank>("/api/v1/prep/question-bank", {
-      role,
+      track,
       keyword,
     });
     return data;
   },
   mockInterview: async (payload: {
-    role: string;
+    track: string;
     resume_text?: string;
     session_id?: string | null;
     answer?: string | null;
@@ -143,10 +143,10 @@ export const landingApi = {
 
 // ---- 栏目5 经验 ----
 export const experienceApi = {
-  list: async (track: string, q: string) => {
-    const { data } = await http.get<{ items: ExperienceItem[] }>(
+  list: async (track: string, q: string, source = "") => {
+    const { data } = await http.get<{ items: ExperienceItem[]; total: number }>(
       "/api/v1/experience",
-      { params: { track, q } },
+      { params: { track, q, source } },
     );
     return data.items;
   },

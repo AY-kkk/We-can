@@ -1,5 +1,7 @@
-import { GraduationCap, X } from "lucide-react";
+import { GraduationCap, Shield, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { assets } from "@/assets";
+import { useAuthStore } from "@/store/auth";
 import { NAV } from "./nav";
 
 export function Sidebar({
@@ -72,10 +74,40 @@ export function Sidebar({
           ))}
         </nav>
 
-        <div className="px-5 py-4 text-xs text-[var(--text-muted)]">
-          求职全链路 · 简历→笔面→复盘→landing→经验
+        <AdminEntry />
+
+        <div className="mx-3 mb-4 flex items-center gap-3 rounded-card bg-brand-50 p-3 dark:bg-ink-800">
+          <img src={assets.mascot} alt="吉祥物" className="h-12 w-12 rounded-btn" />
+          <p className="text-xs text-[var(--text-muted)]">
+            求职全链路陪跑，加油上岸！
+          </p>
         </div>
       </aside>
     </>
+  );
+}
+
+function AdminEntry() {
+  const isAdmin = useAuthStore((s) => s.user?.role === "admin");
+  if (!isAdmin) return null;
+  return (
+    <div className="px-3 pb-2">
+      <NavLink
+        to="/admin"
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-btn px-3 py-2.5 text-sm transition ${
+            isActive
+              ? "bg-accent-500/10 text-accent-600"
+              : "text-[var(--text-muted)] hover:bg-ink-50 dark:hover:bg-ink-800"
+          }`
+        }
+      >
+        <Shield className="h-5 w-5" />
+        <div>
+          <p className="font-medium">管理员后台</p>
+          <p className="text-xs text-[var(--text-muted)]">用户 · 权限 · 看板</p>
+        </div>
+      </NavLink>
+    </div>
   );
 }

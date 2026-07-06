@@ -1,39 +1,50 @@
-import { ExternalLink, Send } from "lucide-react";
+import { ExternalLink, Send, Sparkles } from "lucide-react";
 import * as React from "react";
 import { prepApi } from "@/api/endpoints";
 import type { MockInterview, MockTurn, QuestionBank } from "@/api/types";
-import { Badge } from "@/components/Badge";
+import { assets } from "@/assets";
 import { Button } from "@/components/Button";
 import { Card, CardBody, CardHeader } from "@/components/Card";
 import { Input, Label, Textarea } from "@/components/Field";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, Spinner } from "@/components/States";
+import { TrackSwitcher } from "@/components/TrackSwitcher";
+import { useTrackStore } from "@/store/track";
+import { TRACKS } from "@/theme/tokens";
 
 export default function PrepPage() {
-  const [role, setRole] = React.useState("产品经理");
+  const { track, setTrack } = useTrackStore();
+  const persona = TRACKS.find((t) => t.key === track)?.persona ?? "";
   const [keyword, setKeyword] = React.useState("");
   const [resume, setResume] = React.useState("");
   const [bank, setBank] = React.useState<QuestionBank | null>(null);
+  const [activeCat, setActiveCat] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
 
   const [mock, setMock] = React.useState<MockInterview | null>(null);
   const [answer, setAnswer] = React.useState("");
   const [mockLoading, setMockLoading] = React.useState(false);
 
-  const loadBank = async () => {
+  const loadBank = React.useCallback(async () => {
     setLoading(true);
     try {
-      setBank(await prepApi.questionBank(role, keyword));
+      setBank(await prepApi.questionBank(track, keyword));
+      setActiveCat(0);
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track]);
+
+  React.useEffect(() => {
+    loadBank();
+    setMock(null);
+  }, [loadBank]);
 
   const startMock = async () => {
     setMockLoading(true);
     try {
-      const res = await prepApi.mockInterview({ role, resume_text: resume });
-      setMock(res);
+      setMock(await prepApi.mockInterview({ track, resume_text: resume }));
     } finally {
       setMockLoading(false);
     }
@@ -44,7 +55,7 @@ export default function PrepPage() {
     setMockLoading(true);
     try {
       const res = await prepApi.mockInterview({
-        role,
+        track,
         resume_text: resume,
         session_id: mock.session_id,
         answer,
@@ -63,88 +74,94 @@ export default function PrepPage() {
     <div>
       <PageHeader
         title="笔面准备"
-        subtitle="按目标岗位汇总题库与高频面试题，并进行多轮模拟面试与结构化打分。"
-        persona="AI 产品导师 Echo / 产运导师 Nova"
+        subtitle="按方向汇总四类题库（每方向 100+ 题），并进行人格化多轮模拟面试与结构化打分。"
+        persona={persona}
+        action={
+          <img src={assets.heroPrep} alt="" className="hidden h-16 rounded-card sm:block" />
+        }
       />
 
       <Card className="mb-6">
-        <CardBody className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+        <CardBody className="space-y-4">
           <div>
-            <Label>目标岗位</Label>
-            <Input
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              placeholder="如：产品 / 运营 / 算法 / 前端 / 销售"
-            />
+            <Label>选择方向（切换后加载对应人格与题库）</Label>
+            <TrackSwitcher value={track} onChange={setTrack} />
           </div>
-          <div>
-            <Label>关键词（可选）</Label>
-            <Input
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="如：增长 / 数据分析"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label>关键词（可选）</Label>
+              <Input
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="如：增长 / 数据分析 / React"
+              />
+            </div>
+            <Button variant="primary" loading={loading} onClick={loadBank}>
+              <Sparkles className="h-4 w-4" /> 刷新题库
+            </Button>
           </div>
-          <Button variant="primary" loading={loading} onClick={loadBank}>
-            生成题库
-          </Button>
         </CardBody>
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="题库汇总" desc="笔试题型 + 高频面试题 + 参考来源" />
+          <CardHeader
+            title="题库汇总"
+            desc={bank ? `${bank.label}方向 · 共 ${bank.total} 题` : "四分类题库"}
+          />
           <CardBody>
             {loading ? (
               <Spinner />
             ) : !bank ? (
-              <EmptyState title="还没有题库" desc="填写岗位后点击「生成题库」" />
+              <EmptyState title="还没有题库" />
             ) : (
               <div className="space-y-4">
-                <div>
-                  <p className="mb-2 text-sm font-semibold">笔试题型</p>
-                  <div className="flex flex-wrap gap-2">
-                    {bank.written_types.map((t) => (
-                      <Badge key={t} tone="accent">
-                        {t}
-                      </Badge>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  {bank.categories.map((c, i) => (
+                    <button
+                      key={c.key}
+                      onClick={() => setActiveCat(i)}
+                      className={`rounded-full px-3 py-1 text-xs transition ${
+                        i === activeCat
+                          ? "bg-accent-500 text-white"
+                          : "bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-300"
+                      }`}
+                    >
+                      {c.label} ({c.questions.length})
+                    </button>
+                  ))}
                 </div>
+                <ul className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+                  {bank.categories[activeCat]?.questions.map((q, i) => (
+                    <li
+                      key={i}
+                      className="rounded-btn bg-ink-50 px-3 py-2 text-sm dark:bg-ink-800"
+                    >
+                      <span className="mr-1.5 text-xs text-brand-600">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      {q}
+                    </li>
+                  ))}
+                </ul>
                 <div>
-                  <p className="mb-2 text-sm font-semibold">高频面试题</p>
-                  <ul className="space-y-1.5">
-                    {bank.interview_questions.map((q, i) => (
-                      <li
-                        key={i}
-                        className="rounded-btn bg-ink-50 px-3 py-2 text-sm dark:bg-ink-800"
-                      >
-                        {q}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <p className="mb-2 text-sm font-semibold">参考来源</p>
+                  <p className="mb-2 text-sm font-semibold">参考来源（真实可点击）</p>
                   <div className="space-y-2">
-                    {bank.references.map((r, i) => (
+                    {bank.references.slice(0, 6).map((r, i) => (
                       <a
                         key={i}
                         href={r.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="block rounded-btn border border-[var(--border)] p-3 transition hover:border-brand-300"
+                        className="block rounded-btn border border-[var(--border)] p-2.5 transition hover:border-brand-300"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-brand-700 dark:text-brand-200">
+                          <span className="truncate text-sm font-medium text-brand-700 dark:text-brand-200">
                             {r.title}
                           </span>
-                          <ExternalLink className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" />
                         </div>
-                        <p className="mt-1 text-xs text-[var(--text-muted)]">
-                          {r.summary}
-                        </p>
-                        <span className="mt-1 inline-block text-xs text-[var(--text-muted)]">
+                        <span className="text-xs text-[var(--text-muted)]">
                           来源：{r.source}
                         </span>
                       </a>
@@ -157,7 +174,10 @@ export default function PrepPage() {
         </Card>
 
         <Card>
-          <CardHeader title="模拟面试" desc="多轮对话 · AI 追问与打分" />
+          <CardHeader
+            title="模拟面试"
+            desc={mock ? `面试官人格：${mock.persona}` : "多轮对话 · 三维打分"}
+          />
           <CardBody className="space-y-4">
             {!mock ? (
               <>
@@ -197,8 +217,8 @@ export default function PrepPage() {
                       上一题反馈
                     </p>
                     <div className="mb-2 flex gap-4 text-xs">
-                      <span>内容 {mock.feedback.content_score}</span>
                       <span>结构 {mock.feedback.structure_score}</span>
+                      <span>深度 {mock.feedback.depth_score}</span>
                       <span>表达 {mock.feedback.expression_score}</span>
                     </div>
                     <ul className="list-inside list-disc space-y-1 text-[var(--text-muted)]">
@@ -222,11 +242,7 @@ export default function PrepPage() {
                       placeholder="输入你的回答…"
                       className="flex-1"
                     />
-                    <Button
-                      variant="primary"
-                      loading={mockLoading}
-                      onClick={submitAnswer}
-                    >
+                    <Button variant="primary" loading={mockLoading} onClick={submitAnswer}>
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>

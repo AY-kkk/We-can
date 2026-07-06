@@ -28,10 +28,18 @@ export interface BankItem {
   summary: string;
 }
 
+export interface CategoryBlock {
+  key: string;
+  label: string;
+  questions: string[];
+}
+
 export interface QuestionBank {
-  role: string;
-  written_types: string[];
-  interview_questions: string[];
+  track: string;
+  label: string;
+  persona: string;
+  total: number;
+  categories: CategoryBlock[];
   references: BankItem[];
 }
 
@@ -41,14 +49,15 @@ export interface MockTurn {
 }
 
 export interface MockFeedback {
-  content_score: number;
   structure_score: number;
+  depth_score: number;
   expression_score: number;
   suggestions: string[];
 }
 
 export interface MockInterview {
   session_id: string;
+  persona: string;
   question: string;
   finished: boolean;
   feedback: MockFeedback | null;
@@ -107,6 +116,8 @@ export interface ExperienceItem {
   source: string;
   summary: string;
   track: string;
+  author?: string;
+  published_at?: string;
 }
 
 export interface CollectedItem extends ExperienceItem {

@@ -22,11 +22,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install fastapi "uvicorn[standard]" pydantic pydantic-settings \
             sqlalchemy aiosqlite greenlet python-multipart pdfplumber python-docx \
-            httpx pytest pytest-asyncio pytest-cov ruff black
+            httpx PyJWT bcrypt email-validator pytest pytest-asyncio pytest-cov ruff black
       - name: Ruff
-        run: ruff check app tests
+        run: ruff check app tests scripts
       - name: Black
-        run: black --check app tests
+        run: black --check app tests scripts
       - name: Pytest (coverage >= 60%)
         run: pytest --cov=app --cov-fail-under=60
 

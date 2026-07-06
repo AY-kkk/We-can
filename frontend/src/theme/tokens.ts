@@ -6,18 +6,18 @@ export const tokens = {
     brandSoft: "#eef7f4",
     accent: "#ff7a45",
   },
-  radius: { card: 12, btn: 8, pill: 9999 },
+  radius: { card: 16, btn: 8, pill: 9999 },
   space: [4, 8, 12, 16, 24, 32, 48, 64],
   motion: { enter: "ease-out", leave: "ease-in", duration: 220 },
 } as const;
 
-export type Track = "product" | "sales" | "operation" | "algorithm" | "frontend" | "other";
+// 五方向与栏目2/栏目5保持一致
+export type Track = "product" | "operation" | "algorithm" | "market" | "frontend";
 
-export const TRACKS: { key: Track; label: string }[] = [
-  { key: "product", label: "产品" },
-  { key: "operation", label: "运营" },
-  { key: "algorithm", label: "算法" },
-  { key: "frontend", label: "前端" },
-  { key: "sales", label: "销售" },
-  { key: "other", label: "其他" },
+export const TRACKS: { key: Track; label: string; persona: string }[] = [
+  { key: "product", label: "产品", persona: "AI 产品导师 Echo" },
+  { key: "operation", label: "运营", persona: "产运导师 Nova" },
+  { key: "algorithm", label: "算法", persona: "全栈大师" },
+  { key: "market", label: "市场", persona: "产运导师 Nova" },
+  { key: "frontend", label: "前端", persona: "前端设计师 + 全栈大师" },
 ];

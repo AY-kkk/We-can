@@ -52,3 +52,21 @@ We-can 采用「前后端分离 + 分层解耦 + Provider 可插拔」架构。
 
 所有接口返回 `{code, message, data}`。`code=0` 表示成功；异常由 `core/exceptions.py`
 全局 handler 捕获并转换为统一 envelope。
+
+## v2 新增：鉴权与管理员
+
+```
+前端 authStore(JWT) ──Bearer──▶ get_current_user / get_current_admin 守卫
+                                   │
+                       ┌───────────┴───────────┐
+                       ▼                       ▼
+                 业务栏目(user 隔离)        /admin/*(admin 校验)
+```
+
+- `core/security.py`：JWT（access+refresh）+ bcrypt 哈希。
+- `core/deps.py`：`get_current_user` / `get_current_admin` 依赖注入守卫。
+- 各栏目模型带 `user_id` 外键，service 按 `user_id` 过滤，实现数据隔离。
+- 首启 lifespan 自动种子管理员（env 配置）。
+- 题库/经验帖以 `db/seeds/*.json` 交付，`services/seed_loader.py` 加载，保证离线达标；
+  SearchProvider 负责增量刷新。
+详见 [AUTH.md](AUTH.md) 与 [SKILLS.md](SKILLS.md)。

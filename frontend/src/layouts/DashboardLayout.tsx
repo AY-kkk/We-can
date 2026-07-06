@@ -1,12 +1,18 @@
 import { AnimatePresence, motion } from "framer-motion";
 import * as React from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { useAuthStore } from "@/store/auth";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 export function DashboardLayout() {
   const [open, setOpen] = React.useState(false);
   const location = useLocation();
+  const fetchMe = useAuthStore((s) => s.fetchMe);
+
+  React.useEffect(() => {
+    fetchMe().catch(() => {});
+  }, [fetchMe]);
   return (
     <div className="flex h-full">
       <Sidebar open={open} onClose={() => setOpen(false)} />
