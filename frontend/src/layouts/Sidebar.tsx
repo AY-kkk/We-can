@@ -1,0 +1,81 @@
+import { GraduationCap, X } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { NAV } from "./nav";
+
+export function Sidebar({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`fixed z-40 flex h-full w-72 flex-col border-r border-[var(--border)] bg-[var(--surface)] transition-transform lg:static lg:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between px-5 py-5">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 place-items-center rounded-btn bg-brand-600 text-white">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-base font-semibold leading-tight text-[var(--text)]">
+                We-can
+              </p>
+              <p className="text-xs text-[var(--text-muted)]">秋招小助手</p>
+            </div>
+          </div>
+          <button
+            className="text-[var(--text-muted)] lg:hidden"
+            onClick={onClose}
+            aria-label="关闭菜单"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-1 px-3">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `group flex items-center gap-3 rounded-btn px-3 py-2.5 text-sm transition ${
+                  isActive
+                    ? "bg-brand-50 text-brand-700 dark:bg-ink-800 dark:text-brand-200"
+                    : "text-[var(--text-muted)] hover:bg-ink-50 hover:text-[var(--text)] dark:hover:bg-ink-800"
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon
+                    className={`h-5 w-5 ${isActive ? "text-brand-600" : ""}`}
+                  />
+                  <div>
+                    <p className="font-medium">{item.label}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{item.desc}</p>
+                  </div>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="px-5 py-4 text-xs text-[var(--text-muted)]">
+          求职全链路 · 简历→笔面→复盘→landing→经验
+        </div>
+      </aside>
+    </>
+  );
+}
