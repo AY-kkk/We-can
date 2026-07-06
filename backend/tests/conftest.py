@@ -14,13 +14,16 @@ os.environ["UPLOAD_DIR"] = tempfile.mkdtemp()
 
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
-from app.db.session import init_db  # noqa: E402
+from app.db.session import SessionLocal, init_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.services.auth_service import seed_admin  # noqa: E402
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def _prepare_db():
     await init_db()
+    async with SessionLocal() as db:
+        await seed_admin(db)
     yield
 
 

@@ -1,4 +1,4 @@
-"""栏目3 面试复盘 routes."""
+"""栏目3 面试复盘 routes (user-scoped)."""
 
 from __future__ import annotations
 
@@ -9,13 +9,15 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.deps import get_current_user
 from app.core.exceptions import NotFoundError, ValidationAppError
+from app.db.models import User
 from app.db.session import get_db
 from app.providers.base import TranscriberProvider
 from app.providers.factory import get_transcriber_provider
 from app.schemas.common import ok
 from app.schemas.review import AnalyzeRequest, TranscribeRequest
-from app.services import review_service
+from app.services import admin_service, review_service
 
 router = APIRouter(prefix="/review", tags=["review"])
 
@@ -27,7 +29,7 @@ def _upload_dir() -> Path:
 
 
 @router.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), user: User = Depends(get_current_user)):
     data = await file.read()
     if len(data) > settings.max_upload_bytes:
         raise ValidationAppError(f"文件超过 {settings.max_upload_mb}MB 限制")
@@ -41,6 +43,7 @@ async def upload(file: UploadFile = File(...)):
 @router.post("/transcribe")
 async def transcribe(
     req: TranscribeRequest,
+    user: User = Depends(get_current_user),
     transcriber: TranscriberProvider = Depends(get_transcriber_provider),
 ):
     path = _upload_dir() / req.file_id
@@ -51,12 +54,17 @@ async def transcribe(
 
 
 @router.post("/analyze")
-async def analyze(req: AnalyzeRequest, db: AsyncSession = Depends(get_db)):
-    result = await review_service.analyze_and_save(db, req.transcript, req.title)
+async def analyze(
+    req: AnalyzeRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await review_service.analyze_and_save(db, req.transcript, req.title, user_id=user.id)
+    await admin_service.record_usage(db, user.id, "review", "analyze")
     return ok(result.model_dump())
 
 
 @router.get("/history")
-async def history(db: AsyncSession = Depends(get_db)):
-    rows = await review_service.list_history(db)
+async def history(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    rows = await review_service.list_history(db, user_id=user.id)
     return ok([r.model_dump() for r in rows])

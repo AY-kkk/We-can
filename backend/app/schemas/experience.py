@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+TRACKS = ["product", "operation", "algorithm", "market", "frontend"]
+
 
 class ExperienceItem(BaseModel):
     title: str
@@ -11,11 +13,14 @@ class ExperienceItem(BaseModel):
     source: str
     summary: str
     track: str
+    author: str = ""
+    published_at: str = ""
 
 
 class ExperienceListResponse(BaseModel):
     track: str
     query: str
+    total: int
     items: list[ExperienceItem]
 
 
@@ -24,7 +29,7 @@ class CollectRequest(BaseModel):
     url: str = Field(..., min_length=1)
     source: str = ""
     summary: str = ""
-    track: str = "other"
+    track: str = "product"
 
 
 class CollectedItem(BaseModel):

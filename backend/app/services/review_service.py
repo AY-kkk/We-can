@@ -59,9 +59,12 @@ def _analyze_transcript(transcript: str) -> dict:
     }
 
 
-async def analyze_and_save(db: AsyncSession, transcript: str, title: str) -> AnalyzeResponse:
+async def analyze_and_save(
+    db: AsyncSession, transcript: str, title: str, user_id: int | None = None
+) -> AnalyzeResponse:
     result = _analyze_transcript(transcript)
     record = ReviewRecord(
+        user_id=user_id,
         title=title,
         transcript=transcript,
         overall_score=result["overall_score"],
@@ -94,12 +97,11 @@ async def analyze_and_save(db: AsyncSession, transcript: str, title: str) -> Ana
     )
 
 
-async def list_history(db: AsyncSession) -> list[ReviewHistoryItem]:
-    rows = (
-        (await db.execute(select(ReviewRecord).order_by(ReviewRecord.created_at.asc())))
-        .scalars()
-        .all()
-    )
+async def list_history(db: AsyncSession, user_id: int | None = None) -> list[ReviewHistoryItem]:
+    stmt = select(ReviewRecord).order_by(ReviewRecord.created_at.asc())
+    if user_id is not None:
+        stmt = stmt.where(ReviewRecord.user_id == user_id)
+    rows = (await db.execute(stmt)).scalars().all()
     return [
         ReviewHistoryItem(
             id=r.id,

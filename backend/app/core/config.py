@@ -35,6 +35,19 @@ class Settings(BaseSettings):
     transcriber_api_base: str = ""
     transcriber_api_key: str = ""
 
+    # Auth / security
+    jwt_secret: str = "change-me-in-prod-please-set-a-long-random-secret"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+    login_max_attempts: int = 5
+    login_lockout_minutes: int = 10
+
+    # Seed admin (auto-created on first startup)
+    admin_email: str = "admin@wecan.dev"
+    admin_username: str = "admin"
+    admin_password: str = "Admin@12345"
+
     # Uploads
     upload_dir: str = "./uploads"
     max_upload_mb: int = 15

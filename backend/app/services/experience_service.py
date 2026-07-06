@@ -1,4 +1,4 @@
-"""栏目5 经验帖集合 business logic."""
+"""栏目5 经验帖集合 business logic (seed-backed, multi-source)."""
 
 from __future__ import annotations
 
@@ -13,40 +13,83 @@ from app.schemas.experience import (
     ExperienceItem,
     ExperienceListResponse,
 )
+from app.services.seed_loader import load_experiences
 
 TRACKS = {
     "product": "产品",
-    "sales": "销售",
     "operation": "运营",
     "algorithm": "算法",
+    "market": "市场",
     "frontend": "前端",
-    "other": "其他",
 }
 
 
+def _normalize_track(track: str) -> str:
+    return track if track in TRACKS else "product"
+
+
 async def search_experiences(
-    track: str, query: str, search: SearchProvider
+    track: str,
+    query: str,
+    search: SearchProvider,
+    source: str = "",
 ) -> ExperienceListResponse:
-    track = track if track in TRACKS else "other"
-    track_cn = TRACKS[track]
-    q = f"{track_cn} {query} 秋招 经验".strip()
-    results = await search.search(q, limit=9)
+    track = _normalize_track(track)
+    seed = load_experiences().get(track, [])
+
     items = [
         ExperienceItem(
-            title=r.title,
-            url=r.url,
-            source=r.source,
-            summary=r.summary,
+            title=it["title"],
+            url=it["url"],
+            source=it["source"],
+            summary=it["summary"],
             track=track,
+            author=it.get("author", ""),
+            published_at=it.get("published_at", ""),
         )
-        for r in results
+        for it in seed
     ]
-    return ExperienceListResponse(track=track, query=query, items=items)
+
+    if query:
+        ql = query.lower()
+        items = [it for it in items if ql in it.title.lower() or ql in it.summary.lower()]
+    if source:
+        items = [it for it in items if it.source == source]
+
+    # best-effort live augmentation via SearchProvider (dedup by url)
+    try:
+        results = await search.search(f"{TRACKS[track]} {query} 秋招 经验".strip(), limit=3)
+        seen = {it.url for it in items}
+        for r in results:
+            if r.url not in seen:
+                items.append(
+                    ExperienceItem(
+                        title=r.title,
+                        url=r.url,
+                        source=r.source,
+                        summary=r.summary,
+                        track=track,
+                    )
+                )
+                seen.add(r.url)
+    except Exception:  # noqa: BLE001
+        pass
+
+    return ExperienceListResponse(track=track, query=query, total=len(items), items=items)
 
 
-async def collect(db: AsyncSession, req: CollectRequest) -> CollectedItem:
+async def collect(
+    db: AsyncSession, req: CollectRequest, user_id: int | None = None
+) -> CollectedItem:
     existing = (
-        (await db.execute(select(CollectedPost).where(CollectedPost.url == req.url)))
+        (
+            await db.execute(
+                select(CollectedPost).where(
+                    CollectedPost.url == req.url,
+                    CollectedPost.user_id == user_id,
+                )
+            )
+        )
         .scalars()
         .first()
     )
@@ -54,11 +97,12 @@ async def collect(db: AsyncSession, req: CollectRequest) -> CollectedItem:
         row = existing
     else:
         row = CollectedPost(
+            user_id=user_id,
             title=req.title,
             url=req.url,
             source=req.source,
             summary=req.summary,
-            track=req.track if req.track in TRACKS else "other",
+            track=_normalize_track(req.track),
         )
         db.add(row)
         await db.commit()
@@ -73,12 +117,13 @@ async def collect(db: AsyncSession, req: CollectRequest) -> CollectedItem:
     )
 
 
-async def list_collected(db: AsyncSession) -> list[CollectedItem]:
-    rows = (
-        (await db.execute(select(CollectedPost).order_by(CollectedPost.created_at.desc())))
-        .scalars()
-        .all()
+async def list_collected(db: AsyncSession, user_id: int | None = None) -> list[CollectedItem]:
+    stmt = (
+        select(CollectedPost)
+        .where(CollectedPost.user_id == user_id)
+        .order_by(CollectedPost.created_at.desc())
     )
+    rows = (await db.execute(stmt)).scalars().all()
     return [
         CollectedItem(
             id=r.id,
@@ -92,9 +137,9 @@ async def list_collected(db: AsyncSession) -> list[CollectedItem]:
     ]
 
 
-async def remove_collected(db: AsyncSession, item_id: int) -> bool:
+async def remove_collected(db: AsyncSession, item_id: int, user_id: int | None = None) -> bool:
     row = await db.get(CollectedPost, item_id)
-    if not row:
+    if not row or row.user_id != user_id:
         return False
     await db.delete(row)
     await db.commit()

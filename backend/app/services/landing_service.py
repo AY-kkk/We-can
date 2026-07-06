@@ -27,12 +27,13 @@ DEFAULT_CHECKLIST = [
 ]
 
 
-async def ensure_defaults(db: AsyncSession) -> None:
-    count = (await db.execute(select(ChecklistItem.id).limit(1))).first()
+async def ensure_defaults(db: AsyncSession, user_id: int | None = None) -> None:
+    stmt = select(ChecklistItem.id).where(ChecklistItem.user_id == user_id).limit(1)
+    count = (await db.execute(stmt)).first()
     if count:
         return
     for cat, title in DEFAULT_CHECKLIST:
-        db.add(ChecklistItem(category=cat, title=title, is_custom=False))
+        db.add(ChecklistItem(user_id=user_id, category=cat, title=title, is_custom=False))
     await db.commit()
 
 
@@ -47,16 +48,22 @@ def _to_out(r: ChecklistItem) -> ChecklistItemOut:
     )
 
 
-async def get_checklist(db: AsyncSession) -> list[ChecklistItemOut]:
-    await ensure_defaults(db)
-    rows = (
-        (await db.execute(select(ChecklistItem).order_by(ChecklistItem.id.asc()))).scalars().all()
+async def get_checklist(db: AsyncSession, user_id: int | None = None) -> list[ChecklistItemOut]:
+    await ensure_defaults(db, user_id)
+    stmt = (
+        select(ChecklistItem)
+        .where(ChecklistItem.user_id == user_id)
+        .order_by(ChecklistItem.id.asc())
     )
+    rows = (await db.execute(stmt)).scalars().all()
     return [_to_out(r) for r in rows]
 
 
-async def add_item(db: AsyncSession, item: ChecklistItemIn) -> ChecklistItemOut:
+async def add_item(
+    db: AsyncSession, item: ChecklistItemIn, user_id: int | None = None
+) -> ChecklistItemOut:
     row = ChecklistItem(
+        user_id=user_id,
         category=item.category,
         title=item.title,
         done=item.done,
@@ -69,9 +76,11 @@ async def add_item(db: AsyncSession, item: ChecklistItemIn) -> ChecklistItemOut:
     return _to_out(row)
 
 
-async def update_item(db: AsyncSession, upd: ChecklistItemUpdate) -> ChecklistItemOut | None:
+async def update_item(
+    db: AsyncSession, upd: ChecklistItemUpdate, user_id: int | None = None
+) -> ChecklistItemOut | None:
     row = await db.get(ChecklistItem, upd.id)
-    if not row:
+    if not row or row.user_id != user_id:
         return None
     if upd.done is not None:
         row.done = upd.done
@@ -84,9 +93,9 @@ async def update_item(db: AsyncSession, upd: ChecklistItemUpdate) -> ChecklistIt
     return _to_out(row)
 
 
-async def delete_item(db: AsyncSession, item_id: int) -> bool:
+async def delete_item(db: AsyncSession, item_id: int, user_id: int | None = None) -> bool:
     row = await db.get(ChecklistItem, item_id)
-    if not row:
+    if not row or row.user_id != user_id:
         return False
     await db.delete(row)
     await db.commit()

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+TRACKS = ["product", "operation", "algorithm", "market", "frontend"]
+
 
 class QuestionBankRequest(BaseModel):
-    role: str = Field(..., min_length=1, description="目标岗位")
+    track: str = Field("product", description="方向: product/operation/algorithm/market/frontend")
     keyword: str = ""
 
 
@@ -17,15 +19,23 @@ class BankItem(BaseModel):
     summary: str
 
 
+class CategoryBlock(BaseModel):
+    key: str
+    label: str
+    questions: list[str]
+
+
 class QuestionBankResponse(BaseModel):
-    role: str
-    written_types: list[str]
-    interview_questions: list[str]
+    track: str
+    label: str
+    persona: str
+    total: int
+    categories: list[CategoryBlock]
     references: list[BankItem]
 
 
 class QuestionsRequest(BaseModel):
-    role: str = Field(..., min_length=1)
+    track: str = "product"
     resume_text: str = ""
 
 
@@ -40,7 +50,7 @@ class MockTurn(BaseModel):
 
 
 class MockInterviewRequest(BaseModel):
-    role: str = Field(..., min_length=1)
+    track: str = Field("product")
     resume_text: str = ""
     session_id: str | None = None
     answer: str | None = None
@@ -48,14 +58,15 @@ class MockInterviewRequest(BaseModel):
 
 
 class MockFeedback(BaseModel):
-    content_score: int
     structure_score: int
+    depth_score: int
     expression_score: int
     suggestions: list[str]
 
 
 class MockInterviewResponse(BaseModel):
     session_id: str
+    persona: str
     question: str
     finished: bool = False
     feedback: MockFeedback | None = None

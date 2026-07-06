@@ -22,7 +22,12 @@ logger = get_logger("wecan.main")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await init_db()
-    logger.info("Database initialized")
+    from app.db.session import SessionLocal
+    from app.services.auth_service import seed_admin
+
+    async with SessionLocal() as db:
+        await seed_admin(db)
+    logger.info("Database initialized; admin seeded")
     yield
 
 
