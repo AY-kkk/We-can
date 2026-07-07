@@ -78,8 +78,13 @@ async def test_list_filtered_by_source(client):
     )
     access = reg.json()["data"]["tokens"]["access_token"]
     hdr = {"Authorization": f"Bearer {access}"}
-    r = await client.get("/api/v1/experience?track=frontend&source=小红书", headers=hdr)
+    r = await client.get("/api/v1/experience?track=frontend&source=掘金", headers=hdr)
     assert r.status_code == 200
     items = r.json()["data"]["items"]
     assert items
-    assert all(it["source"] == "小红书" for it in items)
+    assert all(it["source"] == "掘金" for it in items)
+    # 小红书来源已彻底移除
+    none = await client.get(
+        "/api/v1/experience?track=frontend&source=小红书", headers=hdr
+    )
+    assert none.json()["data"]["items"] == []
