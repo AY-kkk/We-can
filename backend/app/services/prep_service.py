@@ -6,10 +6,12 @@ import uuid
 
 from app.providers.base import SearchProvider
 from app.providers.prompts import (
+    BACKEND_ARCHITECT,
     FRONTEND_DESIGNER,
     FULLSTACK_MASTER,
     PRODUCT_MENTOR_ECHO,
     PRODUCT_OPS_NOVA,
+    SALES_COACH_VEGA,
 )
 from app.schemas.prep import (
     BankItem,
@@ -37,6 +39,8 @@ TRACK_PERSONA = {
     "market": ("产运导师 Nova", PRODUCT_OPS_NOVA),
     "algorithm": ("全栈大师", FULLSTACK_MASTER),
     "frontend": ("前端设计师 + 全栈大师", FRONTEND_DESIGNER + "\n" + FULLSTACK_MASTER),
+    "backend": ("后端架构师 Atlas", BACKEND_ARCHITECT),
+    "sales": ("销售增长教练 Vega", SALES_COACH_VEGA),
 }
 
 TRACK_LABELS = {
@@ -45,6 +49,8 @@ TRACK_LABELS = {
     "algorithm": "算法",
     "market": "市场",
     "frontend": "前端",
+    "backend": "后端",
+    "sales": "销售",
 }
 
 

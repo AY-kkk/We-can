@@ -6,7 +6,15 @@ from app.services import prep_service
 
 @pytest.mark.asyncio
 async def test_question_bank_meets_min_100():
-    for track in ["product", "operation", "algorithm", "market", "frontend"]:
+    for track in [
+        "product",
+        "operation",
+        "algorithm",
+        "market",
+        "frontend",
+        "backend",
+        "sales",
+    ]:
         resp = await prep_service.build_question_bank(track, "", MockSearchProvider())
         assert resp.total >= 100, f"{track} only {resp.total}"
         cats = {c.key for c in resp.categories}
@@ -21,6 +29,8 @@ def test_persona_switches_by_track():
     assert prep_service.persona_for("market")[0] == "产运导师 Nova"
     assert prep_service.persona_for("algorithm")[0] == "全栈大师"
     assert "前端" in prep_service.persona_for("frontend")[0]
+    assert prep_service.persona_for("backend")[0] == "后端架构师 Atlas"
+    assert prep_service.persona_for("sales")[0] == "销售增长教练 Vega"
 
 
 def test_generate_questions_tailored():

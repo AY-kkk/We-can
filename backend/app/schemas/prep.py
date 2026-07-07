@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-TRACKS = ["product", "operation", "algorithm", "market", "frontend"]
+TRACKS = ["product", "operation", "algorithm", "market", "frontend", "backend", "sales"]
 
 
 class QuestionBankRequest(BaseModel):

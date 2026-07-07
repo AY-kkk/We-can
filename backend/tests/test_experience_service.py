@@ -26,7 +26,15 @@ async def test_mock_provider_does_not_inject_placeholder_links():
 
 def test_seed_meets_min_50_per_direction():
     data = load_experiences()
-    for track in ["product", "operation", "algorithm", "market", "frontend"]:
+    for track in [
+        "product",
+        "operation",
+        "algorithm",
+        "market",
+        "frontend",
+        "backend",
+        "sales",
+    ]:
         assert len(data.get(track, [])) >= 50, f"{track} under 50"
         # multi-source
         sources = {i["source"] for i in data[track]}

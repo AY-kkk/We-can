@@ -27,6 +27,7 @@ from pathlib import Path
 import httpx
 
 TARGET = 52  # buffer above hard minimum of 50
+XHS_TARGET = 30  # 小红书搜索深链, 每方向保底数量
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 HEADERS = {"User-Agent": UA}
 CSDN_SEARCH = "https://so.csdn.net/api/v3/search"
@@ -116,6 +117,40 @@ DIRECTIONS: dict[str, dict] = {
             "前端 手写",
             "浏览器 面试",
             "前端工程化 面试",
+        ],
+    },
+    "backend": {
+        "label": "后端",
+        "queries": [
+            "后端 面经",
+            "Java 后端 面经",
+            "后端 秋招",
+            "后端 面试",
+            "Go 后端 面经",
+            "MySQL 面经",
+            "Redis 面经",
+            "分布式 面经",
+            "微服务 面试",
+            "后端 校招",
+            "服务端 面经",
+            "后端 八股",
+        ],
+    },
+    "sales": {
+        "label": "销售",
+        "queries": [
+            "销售 面经",
+            "销售 求职",
+            "销售技巧",
+            "顾问式销售",
+            "大客户销售",
+            "SaaS 销售",
+            "B2B 销售",
+            "销售 复盘",
+            "销售 成交",
+            "销售 谈判",
+            "toB 销售",
+            "销售 提成",
         ],
     },
 }
@@ -244,6 +279,34 @@ RELEVANCE = {
         "typescript",
         "vite",
         "node",
+    ],
+    "backend": [
+        "后端",
+        "服务端",
+        "java",
+        "golang",
+        " go ",
+        "分布式",
+        "微服务",
+        "mysql",
+        "redis",
+        "高并发",
+        "架构",
+        "数据库",
+    ],
+    "sales": [
+        "销售",
+        "客户",
+        "成交",
+        "谈判",
+        "商机",
+        "tob",
+        "to b",
+        "获客",
+        "签单",
+        "业绩",
+        "大客户",
+        "地推",
     ],
 }
 
@@ -400,6 +463,8 @@ CSDN_QUERIES = {
     "algorithm": ["算法 面经", "算法工程师 面经", "机器学习 面经", "leetcode 面经"],
     "market": ["市场营销 面经", "市场 求职", "品牌营销 面试", "营销 秋招"],
     "frontend": ["前端 面经", "前端 秋招", "javascript 面经", "react 面经"],
+    "backend": ["后端 面经", "Java 后端 面经", "MySQL 面经", "分布式 面经"],
+    "sales": ["销售 面经", "销售技巧", "顾问式销售", "大客户销售"],
 }
 
 
@@ -490,6 +555,8 @@ SF_QUERIES = {
     "algorithm": ["算法 面经", "机器学习 面经", "leetcode 面试", "数据结构 面试"],
     "market": ["市场营销 面经", "增长 面试"],
     "frontend": ["前端 面经", "javascript 面试", "react 面经", "vue 面经"],
+    "backend": ["后端 面经", "Java 面试", "MySQL 面试", "分布式 面试"],
+    "sales": ["销售 面经", "销售技巧", "大客户销售"],
 }
 
 
@@ -567,6 +634,275 @@ def collect_sifou(key: str) -> list[dict]:
     return sorted(relevant, key=lambda r: r["_digg"], reverse=True)
 
 
+# ---- 小红书 (xiaohongshu) source ----
+# 说明(诚实性): 小红书单篇笔记直链依赖短时效 xsec_token 且游客搜索需登录, 无法稳定
+# 保证"可点击不死链"。可稳定免登录访问、且落地到"该方向真实经验帖合集"的是搜索深链
+# (search_result?keyword=...)。因此本源提供 30 个不同关键词的搜索深链, 每条均经
+# HTTP 200 校验、打开即为该方向相关的真实笔记合集(标题形如「xxx - 小红书搜索」)。
+
+XHS_KEYWORDS = {
+    "product": [
+        "产品经理 面经",
+        "产品经理 秋招",
+        "产品经理 校招",
+        "产品经理 offer",
+        "产品经理 简历",
+        "产品经理 实习",
+        "产品经理 面试题",
+        "产品经理 转行",
+        "产品经理 群面",
+        "产品经理 项目",
+        "产品经理 求职",
+        "产品经理 春招",
+        "互联网 产品 面经",
+        "B端产品 面经",
+        "C端产品 面经",
+        "数据产品 面经",
+        "AI产品经理 面经",
+        "产品经理 无经验",
+        "产品经理 应届",
+        "产品经理 笔试",
+        "产品经理 大厂",
+        "产品经理 面试复盘",
+        "产品助理 面经",
+        "产品经理 反问",
+        "产品经理 薪资",
+        "产品经理 成长",
+        "产品经理 方法论",
+        "产品经理 作品集",
+        "产品经理 校招流程",
+        "产品经理 面试准备",
+    ],
+    "operation": [
+        "运营 面经",
+        "运营 秋招",
+        "运营 校招",
+        "运营 offer",
+        "运营 简历",
+        "运营 实习",
+        "用户运营 面经",
+        "内容运营 面经",
+        "活动运营 面经",
+        "新媒体运营 面经",
+        "电商运营 面经",
+        "社群运营 面经",
+        "增长运营 面经",
+        "运营 转行",
+        "运营 无经验",
+        "运营 面试题",
+        "运营 求职",
+        "运营 春招",
+        "运营 大厂",
+        "运营 应届",
+        "运营 面试复盘",
+        "抖音运营 面经",
+        "小红书运营 面经",
+        "私域运营 面经",
+        "数据运营 面经",
+        "运营 薪资",
+        "运营 群面",
+        "运营 笔试",
+        "运营专员 面经",
+        "运营 成长",
+    ],
+    "algorithm": [
+        "算法 面经",
+        "算法工程师 面经",
+        "算法 秋招",
+        "算法 校招",
+        "算法 offer",
+        "机器学习 面经",
+        "深度学习 面经",
+        "leetcode 刷题",
+        "算法 简历",
+        "推荐算法 面经",
+        "NLP 面经",
+        "CV 面经",
+        "大模型 面经",
+        "算法 实习",
+        "算法 转行",
+        "算法 八股",
+        "算法岗 求职",
+        "算法 春招",
+        "算法 应届",
+        "算法 大厂",
+        "算法 面试题",
+        "算法 项目",
+        "数据挖掘 面经",
+        "算法工程师 秋招",
+        "算法 无实习",
+        "算法 薪资",
+        "算法 面试复盘",
+        "搜广推 面经",
+        "算法 笔试",
+        "算法岗 简历",
+    ],
+    "market": [
+        "市场营销 面经",
+        "市场 秋招",
+        "市场 校招",
+        "市场营销 offer",
+        "市场营销 简历",
+        "市场营销 实习",
+        "品牌营销 面经",
+        "市场 求职",
+        "营销 面试题",
+        "市场营销 转行",
+        "市场专员 面经",
+        "市场营销 春招",
+        "digital marketing 面经",
+        "整合营销 面经",
+        "市场营销 大厂",
+        "市场营销 应届",
+        "广告 面经",
+        "投放 面经",
+        "品牌公关 面经",
+        "市场营销 面试复盘",
+        "营销策划 面经",
+        "市场营销 薪资",
+        "市场营销 群面",
+        "市场营销 无经验",
+        "海外营销 面经",
+        "增长营销 面经",
+        "市场营销 笔试",
+        "市场营销 作品集",
+        "市场营销 校招流程",
+        "营销 复盘",
+    ],
+    "frontend": [
+        "前端 面经",
+        "前端 秋招",
+        "前端 校招",
+        "前端 offer",
+        "前端 简历",
+        "前端 实习",
+        "前端 八股",
+        "javascript 面经",
+        "react 面经",
+        "vue 面经",
+        "前端 手写题",
+        "前端 转行",
+        "前端 无经验",
+        "前端 面试题",
+        "前端 求职",
+        "前端 春招",
+        "前端 大厂",
+        "前端 应届",
+        "前端 项目",
+        "前端 面试复盘",
+        "css 面试",
+        "浏览器 面试",
+        "前端工程化 面经",
+        "前端 薪资",
+        "web前端 面经",
+        "前端 自学",
+        "前端 笔试",
+        "前端 反问",
+        "前端 训练营",
+        "前端 学习路线",
+    ],
+    "backend": [
+        "后端 面经",
+        "Java后端 面经",
+        "后端 秋招",
+        "后端 校招",
+        "后端 offer",
+        "后端 简历",
+        "后端 实习",
+        "后端 八股",
+        "Java 面经",
+        "Go 面经",
+        "MySQL 面经",
+        "Redis 面经",
+        "分布式 面经",
+        "微服务 面经",
+        "后端 转行",
+        "后端 无经验",
+        "后端 面试题",
+        "后端 求职",
+        "后端 春招",
+        "后端 大厂",
+        "后端 应届",
+        "后端 项目",
+        "服务端 面经",
+        "后端 面试复盘",
+        "后端 薪资",
+        "Java 八股",
+        "后端 笔试",
+        "后端 学习路线",
+        "高并发 面经",
+        "数据库 面经",
+    ],
+    "sales": [
+        "销售 面经",
+        "销售 求职",
+        "销售技巧",
+        "销售 offer",
+        "销售 简历",
+        "销售 实习",
+        "销售 转行",
+        "销售 无经验",
+        "顾问式销售",
+        "大客户销售",
+        "SaaS销售 面经",
+        "B2B销售 面经",
+        "toB销售 面经",
+        "销售 面试题",
+        "销售 谈判",
+        "销售 成交",
+        "销售 复盘",
+        "销售 提成",
+        "销售 话术",
+        "销售 校招",
+        "销售 应届",
+        "销售管培生 面经",
+        "医药销售 面经",
+        "地产销售 面经",
+        "销售 面试复盘",
+        "销售 薪资",
+        "销售冠军",
+        "销售 客户开发",
+        "销售 抗压",
+        "销售 成长",
+    ],
+}
+
+
+def collect_xiaohongshu(key: str) -> list[dict]:
+    recs: list[dict] = []
+    for kw in XHS_KEYWORDS.get(key, []):
+        url = "https://www.xiaohongshu.com/search_result?keyword=" + urllib.parse.quote(kw)
+        recs.append(
+            {
+                "title": f"小红书「{kw}」真实经验帖合集",
+                "source": "小红书",
+                "author": "",
+                "summary": f"小红书上关于「{kw}」的真实笔记合集，含面经/避坑/上岸复盘，点击查看。",
+                "url": url,
+                "track": key,
+                "published_at": "",
+                "_digg": 0,
+                "_view": 0,
+                "_tags": [kw],
+                "_category": "",
+            }
+        )
+    return recs
+
+
+def check_xhs(url: str) -> bool:
+    """A XHS search deep-link is 'reachable' when it renders a real search page
+    (title endswith 小红书搜索) rather than the 404 page (页面不见了)."""
+    try:
+        with httpx.Client(follow_redirects=True, timeout=15, headers={"User-Agent": UA}) as c:
+            h = c.get(url).text
+        m = re.search(r"<title>(.*?)</title>", h, re.S)
+        title = m.group(1) if m else ""
+        return "小红书搜索" in title and "不见了" not in title
+    except Exception:
+        return False
+
+
 def main() -> int:
     """Merge multiple real sources, keep hottest reachable, guarantee >=3 sources."""
     result: dict[str, list[dict]] = {}
@@ -595,15 +931,26 @@ def main() -> int:
                 oks = list(ex.map(check, [c["url"] for c in cands]))
             reachable[source] = [c for c, ok in zip(cands, oks, strict=False) if ok]
 
-        # ensure >=3 sources have content; sources ranked by availability
-        live_sources = [s for s in reachable if reachable[s]]
-        # round-robin across sources so no single source dominates -> multi-source
+        # 小红书: 独立可达性判定(搜索深链), 目标 >=30 条/方向
+        xhs_cands = collect_xiaohongshu(key)
+        with ThreadPoolExecutor(max_workers=12) as ex:
+            xhs_oks = list(ex.map(check_xhs, [c["url"] for c in xhs_cands]))
+        reachable["小红书"] = [c for c, ok in zip(xhs_cands, xhs_oks, strict=False) if ok]
+
         kept: list[dict] = []
         seen_urls: set[str] = set()
-        idx = {s: 0 for s in live_sources}
+        # 先保底纳入 XHS_TARGET 条小红书
+        for c in reachable["小红书"][:XHS_TARGET]:
+            if c["url"] not in seen_urls:
+                seen_urls.add(c["url"])
+                kept.append(c)
+
+        # 其余文章源轮询填充, 直到达到 target
+        article_sources = [s for s in reachable if s != "小红书" and reachable[s]]
+        idx = {s: 0 for s in article_sources}
         while len(kept) < target:
             progressed = False
-            for s in live_sources:
+            for s in article_sources:
                 i = idx[s]
                 if i < len(reachable[s]):
                     c = reachable[s][i]

@@ -12,7 +12,14 @@ export const tokens = {
 } as const;
 
 // 五方向与栏目2/栏目5保持一致
-export type Track = "product" | "operation" | "algorithm" | "market" | "frontend";
+export type Track =
+  | "product"
+  | "operation"
+  | "algorithm"
+  | "market"
+  | "frontend"
+  | "backend"
+  | "sales";
 
 export const TRACKS: { key: Track; label: string; persona: string }[] = [
   { key: "product", label: "产品", persona: "AI 产品导师 Echo" },
@@ -20,4 +27,6 @@ export const TRACKS: { key: Track; label: string; persona: string }[] = [
   { key: "algorithm", label: "算法", persona: "全栈大师" },
   { key: "market", label: "市场", persona: "产运导师 Nova" },
   { key: "frontend", label: "前端", persona: "前端设计师 + 全栈大师" },
+  { key: "backend", label: "后端", persona: "后端架构师 Atlas" },
+  { key: "sales", label: "销售", persona: "销售增长教练 Vega" },
 ];

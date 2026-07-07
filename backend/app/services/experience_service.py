@@ -22,6 +22,8 @@ TRACKS = {
     "algorithm": "算法",
     "market": "市场",
     "frontend": "前端",
+    "backend": "后端",
+    "sales": "销售",
 }
 
 
