@@ -35,12 +35,22 @@ def test_seed_meets_min_50_per_direction():
         "backend",
         "sales",
     ]:
-        assert len(data.get(track, [])) >= 50, f"{track} under 50"
+        items = data.get(track, [])
+        assert len(items) >= 50, f"{track} under 50"
         # multi-source
-        sources = {i["source"] for i in data[track]}
+        sources = {i["source"] for i in items}
         assert len(sources) >= 3
-        for i in data[track]:
+        for i in items:
             assert i["url"].startswith("http")
+        # 顺序须多来源交叉: 前 8 条不能被单一来源垄断(防止某来源扎堆置顶)
+        head_sources = {i["source"] for i in items[:8]}
+        assert len(head_sources) >= 3, f"{track} 顶部来源过于单一: {head_sources}"
+        # 且没有任何来源占比超过 45%
+        from collections import Counter
+
+        counts = Counter(i["source"] for i in items)
+        top_share = max(counts.values()) / len(items)
+        assert top_share <= 0.45, f"{track} 来源 {counts.most_common(1)} 占比过高 {top_share:.0%}"
 
 
 @pytest.mark.asyncio

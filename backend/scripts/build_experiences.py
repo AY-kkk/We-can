@@ -937,23 +937,23 @@ def main() -> int:
             xhs_oks = list(ex.map(check_xhs, [c["url"] for c in xhs_cands]))
         reachable["小红书"] = [c for c, ok in zip(xhs_cands, xhs_oks, strict=False) if ok]
 
+        # 每来源可贡献的上限: 小红书封顶 XHS_TARGET, 其余不限(受各自可达数约束)
+        pools: dict[str, list[dict]] = {}
+        for src_name, arr in reachable.items():
+            if not arr:
+                continue
+            pools[src_name] = arr[:XHS_TARGET] if src_name == "小红书" else list(arr)
+
+        # 全部来源一起轮询交叉排列, 保证列表从头到尾都是多来源混合(避免某一来源扎堆置顶)
         kept: list[dict] = []
         seen_urls: set[str] = set()
-        # 先保底纳入 XHS_TARGET 条小红书
-        for c in reachable["小红书"][:XHS_TARGET]:
-            if c["url"] not in seen_urls:
-                seen_urls.add(c["url"])
-                kept.append(c)
-
-        # 其余文章源轮询填充, 直到达到 target
-        article_sources = [s for s in reachable if s != "小红书" and reachable[s]]
-        idx = {s: 0 for s in article_sources}
+        idx = {s: 0 for s in pools}
         while len(kept) < target:
             progressed = False
-            for s in article_sources:
+            for s in pools:
                 i = idx[s]
-                if i < len(reachable[s]):
-                    c = reachable[s][i]
+                if i < len(pools[s]):
+                    c = pools[s][i]
                     idx[s] += 1
                     if c["url"] not in seen_urls:
                         seen_urls.add(c["url"])
