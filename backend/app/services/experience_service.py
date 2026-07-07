@@ -5,6 +5,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.db.models import CollectedPost
 from app.providers.base import SearchProvider
 from app.schemas.experience import (
@@ -56,24 +57,27 @@ async def search_experiences(
     if source:
         items = [it for it in items if it.source == source]
 
-    # best-effort live augmentation via SearchProvider (dedup by url)
-    try:
-        results = await search.search(f"{TRACKS[track]} {query} 秋招 经验".strip(), limit=3)
-        seen = {it.url for it in items}
-        for r in results:
-            if r.url not in seen:
-                items.append(
-                    ExperienceItem(
-                        title=r.title,
-                        url=r.url,
-                        source=r.source,
-                        summary=r.summary,
-                        track=track,
+    # Best-effort live augmentation, ONLY when a real HTTP search provider is
+    # configured. Under the default mock provider we skip this so users never
+    # see placeholder/dead links (e.g. example.com) mixed into real posts.
+    if settings.search_provider == "http":
+        try:
+            results = await search.search(f"{TRACKS[track]} {query} 秋招 经验".strip(), limit=3)
+            seen = {it.url for it in items}
+            for r in results:
+                if r.url not in seen:
+                    items.append(
+                        ExperienceItem(
+                            title=r.title,
+                            url=r.url,
+                            source=r.source,
+                            summary=r.summary,
+                            track=track,
+                        )
                     )
-                )
-                seen.add(r.url)
-    except Exception:  # noqa: BLE001
-        pass
+                    seen.add(r.url)
+        except Exception:  # noqa: BLE001
+            pass
 
     return ExperienceListResponse(track=track, query=query, total=len(items), items=items)
 
