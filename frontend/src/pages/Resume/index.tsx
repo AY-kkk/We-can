@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 import { Card, CardBody, CardHeader } from "@/components/Card";
 import { Label, Textarea } from "@/components/Field";
 import { PageHeader } from "@/components/PageHeader";
+import { columnHero } from "@/assets";
 import { ErrorState, Spinner } from "@/components/States";
 import { Upload } from "@/components/Upload";
 
@@ -77,6 +78,9 @@ export default function ResumePage() {
         title="简历打磨"
         subtitle="上传简历与目标 JD，按 STAR 法则逐条润色并量化成果，生成 A4 简历与三份自我介绍。"
         persona="全栈大师 / 前端设计师"
+        action={
+          <img src={columnHero.resume} alt="" className="hidden h-16 rounded-card shadow-card sm:block" />
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -3,6 +3,7 @@ import * as React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Input, Label } from "@/components/Field";
+import { mascotPose } from "@/assets";
 import { useAuthStore } from "@/store/auth";
 
 export default function Register() {
@@ -36,6 +37,11 @@ export default function Register() {
 
   return (
     <div>
+      <img
+        src={mascotPose.wave}
+        alt="We-can 吉祥物"
+        className="mb-4 h-16 w-16 rounded-card bg-brand-50 object-contain shadow-card lg:hidden dark:bg-ink-800"
+      />
       <h1 className="text-2xl font-semibold text-[var(--text)]">创建账号</h1>
       <p className="mt-1 text-sm text-[var(--text-muted)]">
         注册 We-can，开启求职全链路陪跑

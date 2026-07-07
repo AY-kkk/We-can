@@ -3,6 +3,7 @@ import * as React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { Input, Label } from "@/components/Field";
+import { mascotPose } from "@/assets";
 import { useAuthStore } from "@/store/auth";
 
 export default function Login() {
@@ -30,7 +31,12 @@ export default function Login() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-[var(--text)]">欢迎回来 👋</h1>
+      <img
+        src={mascotPose.welcome}
+        alt="We-can 吉祥物"
+        className="mb-4 h-16 w-16 rounded-card bg-brand-50 object-contain shadow-card lg:hidden dark:bg-ink-800"
+      />
+      <h1 className="text-2xl font-semibold text-[var(--text)]">欢迎回来</h1>
       <p className="mt-1 text-sm text-[var(--text-muted)]">
         登录 We-can，继续你的秋招之旅
       </p>

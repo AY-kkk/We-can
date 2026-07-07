@@ -2,7 +2,7 @@ import { ExternalLink, Send, Sparkles } from "lucide-react";
 import * as React from "react";
 import { prepApi } from "@/api/endpoints";
 import type { MockInterview, MockTurn, QuestionBank } from "@/api/types";
-import { assets } from "@/assets";
+import { assets, mascotPose } from "@/assets";
 import { Button } from "@/components/Button";
 import { Card, CardBody, CardHeader } from "@/components/Card";
 import { Input, Label, Textarea } from "@/components/Field";
@@ -181,6 +181,16 @@ export default function PrepPage() {
           <CardBody className="space-y-4">
             {!mock ? (
               <>
+                <div className="flex items-center gap-3 rounded-card bg-brand-50 p-3 dark:bg-ink-800">
+                  <img
+                    src={mascotPose.think}
+                    alt=""
+                    className="h-12 w-12 shrink-0 rounded-btn bg-white object-contain shadow-card"
+                  />
+                  <p className="text-xs text-[var(--text-muted)]">
+                    面试官会围绕你的简历追问，先想一想你的高光经历，准备好了就开始吧。
+                  </p>
+                </div>
                 <div>
                   <Label>粘贴简历（用于定制追问，可选）</Label>
                   <Textarea

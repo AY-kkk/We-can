@@ -15,6 +15,7 @@ import { Button } from "@/components/Button";
 import { Card, CardBody, CardHeader } from "@/components/Card";
 import { Input, Label, Textarea } from "@/components/Field";
 import { PageHeader } from "@/components/PageHeader";
+import { columnHero } from "@/assets";
 import { EmptyState, Spinner } from "@/components/States";
 import { Upload } from "@/components/Upload";
 
@@ -79,6 +80,9 @@ export default function ReviewPage() {
         title="面试复盘"
         subtitle="录音或上传音频，转写后生成结构化复盘报告，并追踪多场面试的表现趋势。"
         persona="产运导师 Nova"
+        action={
+          <img src={columnHero.review} alt="" className="hidden h-16 rounded-card shadow-card sm:block" />
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

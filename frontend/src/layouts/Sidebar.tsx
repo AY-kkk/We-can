@@ -1,6 +1,6 @@
 import { GraduationCap, Shield, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { assets } from "@/assets";
+import { mascotPose } from "@/assets";
 import { useAuthStore } from "@/store/auth";
 import { NAV } from "./nav";
 
@@ -77,7 +77,7 @@ export function Sidebar({
         <AdminEntry />
 
         <div className="mx-3 mb-4 flex items-center gap-3 rounded-card bg-brand-50 p-3 dark:bg-ink-800">
-          <img src={assets.mascot} alt="吉祥物" className="h-12 w-12 rounded-btn" />
+          <img src={mascotPose.cheer} alt="加油吉祥物" className="h-12 w-12 rounded-btn bg-white object-contain shadow-card" />
           <p className="text-xs text-[var(--text-muted)]">
             求职全链路陪跑，加油上岸！
           </p>

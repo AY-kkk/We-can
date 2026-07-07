@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { authApi } from "@/api/auth";
 import { Button } from "@/components/Button";
 import { Input, Label } from "@/components/Field";
+import { SuccessState } from "@/components/States";
 
 export default function ForgotPassword() {
   const [email, setEmail] = React.useState("");
@@ -102,9 +103,18 @@ export default function ForgotPassword() {
       )}
 
       {step === "done" && (
-        <p className="mt-8 rounded-btn bg-brand-50 px-4 py-3 text-sm text-brand-700 dark:bg-ink-800 dark:text-brand-200">
-          密码已重置成功，请返回登录。
-        </p>
+        <SuccessState
+          title="密码已重置成功"
+          desc="现在可以用新密码登录 We-can，继续你的秋招之旅。"
+          action={
+            <Link
+              to="/auth/login"
+              className="rounded-btn bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              返回登录
+            </Link>
+          }
+        />
       )}
 
       <p className="mt-4 text-center text-sm text-[var(--text-muted)]">

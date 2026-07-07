@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 import { Card, CardBody, CardHeader } from "@/components/Card";
 import { Input, Label, Select, Textarea } from "@/components/Field";
 import { PageHeader } from "@/components/PageHeader";
+import { columnHero } from "@/assets";
 import { Spinner } from "@/components/States";
 
 export default function LandingPage() {
@@ -60,6 +61,9 @@ export default function LandingPage() {
         title="秋招 Landing"
         subtitle="入职前材料清单一目了然，沟通话术一键润色，稳稳落地。"
         persona="高情商话术润色 · 沟通共赢"
+        action={
+          <img src={columnHero.landing} alt="" className="hidden h-16 rounded-card shadow-card sm:block" />
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
