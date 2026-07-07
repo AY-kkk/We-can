@@ -1,8 +1,9 @@
-import { LogOut, Menu, Moon, Shield, Sun } from "lucide-react";
+import { LogOut, Menu, Moon, Settings, Shield, Sun } from "lucide-react";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
+import { AccountSettings } from "@/components/AccountSettings";
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const { mode, toggle } = useThemeStore();
@@ -10,6 +11,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const [open, setOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   const doLogout = async () => {
     await logout();
@@ -68,6 +70,12 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
                   {user?.email}
                 </p>
               </div>
+              <button
+                onMouseDown={() => setSettingsOpen(true)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-[var(--text)] hover:bg-ink-50 dark:hover:bg-ink-800"
+              >
+                <Settings className="h-4 w-4" /> 账号设置
+              </button>
               {user?.role === "admin" && (
                 <button
                   onMouseDown={() => nav("/admin")}
@@ -86,6 +94,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           )}
         </div>
       </div>
+      {settingsOpen && <AccountSettings onClose={() => setSettingsOpen(false)} />}
     </header>
   );
 }

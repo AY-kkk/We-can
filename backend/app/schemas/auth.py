@@ -71,3 +71,15 @@ class ResetPasswordRequest(BaseModel):
         if not _PW_RE.match(v):
             raise ValueError("密码至少 8 位，且同时包含字母和数字")
         return v
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _strength(cls, v: str) -> str:
+        if not _PW_RE.match(v):
+            raise ValueError("密码至少 8 位，且同时包含字母和数字")
+        return v

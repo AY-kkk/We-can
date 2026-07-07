@@ -28,3 +28,7 @@ frontend/.vite/
 
 # Uploads
 backend/uploads/
+
+# build artifacts
+*.tsbuildinfo
+frontend/tsconfig.tsbuildinfo

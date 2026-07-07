@@ -10,6 +10,7 @@ from app.db.models import User
 from app.db.session import get_db
 from app.schemas.auth import (
     AuthResult,
+    ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
     RefreshRequest,
@@ -64,3 +65,15 @@ async def forgot_password(req: ForgotPasswordRequest, db: AsyncSession = Depends
 async def reset_password(req: ResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     await auth_service.reset_password(db, req.reset_token, req.new_password)
     return ok(None, message="密码已重置，请重新登录")
+
+
+@router.post("/change-password")
+async def change_password(
+    req: ChangePasswordRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await auth_service.change_password(db, user, req.current_password, req.new_password)
+    # issue a fresh token pair so the current session stays valid
+    tokens = await auth_service.issue_tokens(db, user)
+    return ok(tokens.model_dump(), message="密码已修改，其他设备需重新登录")

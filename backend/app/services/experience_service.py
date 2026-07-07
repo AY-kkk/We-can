@@ -31,6 +31,18 @@ def _normalize_track(track: str) -> str:
     return track if track in TRACKS else "product"
 
 
+def sources_for_track(track: str) -> list[dict]:
+    """Return the distinct sources (with counts) available for a track,
+    so the UI can offer a source filter."""
+    track = _normalize_track(track)
+    seed = load_experiences().get(track, [])
+    counts: dict[str, int] = {}
+    for it in seed:
+        counts[it["source"]] = counts.get(it["source"], 0) + 1
+    ordered = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+    return [{"source": s, "count": c} for s, c in ordered]
+
+
 async def search_experiences(
     track: str,
     query: str,

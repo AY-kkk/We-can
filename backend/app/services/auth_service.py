@@ -51,6 +51,11 @@ async def _issue_tokens(db: AsyncSession, user: User) -> TokenPair:
     return TokenPair(access_token=access, refresh_token=refresh)
 
 
+async def issue_tokens(db: AsyncSession, user: User) -> TokenPair:
+    """Public wrapper to mint a fresh access/refresh token pair for a user."""
+    return await _issue_tokens(db, user)
+
+
 async def get_by_email(db: AsyncSession, email: str) -> User | None:
     return (await db.execute(select(User).where(User.email == email.lower()))).scalars().first()
 
@@ -152,6 +157,26 @@ async def reset_password(db: AsyncSession, reset_token: str, new_password: str) 
     if not user:
         raise NotFoundError("用户不存在")
     user.password_hash = hash_password(new_password)
+    await db.commit()
+
+
+async def change_password(
+    db: AsyncSession, user: User, current_password: str, new_password: str
+) -> None:
+    """Verify the current password and set a new one, revoking existing sessions."""
+    if not verify_password(current_password, user.password_hash):
+        raise AppError("当前密码不正确", code=400, status_code=400)
+    if verify_password(new_password, user.password_hash):
+        raise AppError("新密码不能与当前密码相同", code=400, status_code=400)
+    user.password_hash = hash_password(new_password)
+    # security: revoke all outstanding refresh tokens so other sessions must re-login
+    rows = (
+        (await db.execute(select(RefreshToken).where(RefreshToken.user_id == user.id)))
+        .scalars()
+        .all()
+    )
+    for row in rows:
+        row.revoked = True
     await db.commit()
 
 

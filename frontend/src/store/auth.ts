@@ -13,6 +13,7 @@ interface AuthState {
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  changePassword: (current: string, next: string) => Promise<void>;
   fetchMe: () => Promise<void>;
   isAuthed: () => boolean;
   isAdmin: () => boolean;
@@ -52,6 +53,14 @@ export const useAuthStore = create<AuthState>()(
           /* ignore */
         }
         set({ user: null, accessToken: null, refreshToken: null });
+      },
+
+      changePassword: async (current, next) => {
+        const tokens = await authApi.changePassword(current, next);
+        set({
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+        });
       },
 
       refreshSession: async () => {

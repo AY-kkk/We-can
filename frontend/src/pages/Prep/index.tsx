@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, Spinner } from "@/components/States";
 import { TrackSwitcher } from "@/components/TrackSwitcher";
 import { useTrackStore } from "@/store/track";
+import { toast } from "@/store/toast";
 import { TRACKS } from "@/theme/tokens";
 
 export default function PrepPage() {
@@ -45,6 +46,9 @@ export default function PrepPage() {
     setMockLoading(true);
     try {
       setMock(await prepApi.mockInterview({ track, resume_text: resume }));
+      toast.success("模拟面试已开始，祝你顺利！");
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setMockLoading(false);
     }
@@ -63,6 +67,8 @@ export default function PrepPage() {
       });
       setMock(res);
       setAnswer("");
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setMockLoading(false);
     }

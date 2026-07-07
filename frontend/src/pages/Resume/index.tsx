@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { columnHero } from "@/assets";
 import { ErrorState, Spinner } from "@/components/States";
 import { Upload } from "@/components/Upload";
+import { toast } from "@/store/toast";
 
 export default function ResumePage() {
   const [resumeText, setResumeText] = React.useState("");
@@ -28,8 +29,10 @@ export default function ResumePage() {
     try {
       const parsed = await resumeApi.parse(file);
       setResumeText(parsed.raw_text);
+      toast.success("简历解析成功");
     } catch (e) {
       setError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -49,8 +52,10 @@ export default function ResumePage() {
       ]);
       setPolish(p);
       setIntro(i);
+      toast.success("润色完成");
     } catch (e) {
       setError((e as Error).message);
+      toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -68,6 +73,7 @@ export default function ResumePage() {
       URL.revokeObjectURL(url);
     } catch {
       // fallback: 前端打印导出
+      toast.info("服务端导出不可用，改用浏览器打印导出");
       handlePrint();
     }
   };

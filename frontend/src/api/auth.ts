@@ -49,6 +49,13 @@ export const authApi = {
       new_password,
     });
   },
+  changePassword: async (current_password: string, new_password: string) => {
+    const { data } = await http.post<TokenPair>("/api/v1/auth/change-password", {
+      current_password,
+      new_password,
+    });
+    return data;
+  },
 };
 
 export const adminApi = {

@@ -150,6 +150,13 @@ export const experienceApi = {
     );
     return data.items;
   },
+  sources: async (track: string) => {
+    const { data } = await http.get<{ source: string; count: number }[]>(
+      "/api/v1/experience/sources",
+      { params: { track } },
+    );
+    return data;
+  },
   collect: async (item: ExperienceItem) => {
     const { data } = await http.post<CollectedItem>(
       "/api/v1/experience/collect",

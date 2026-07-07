@@ -32,6 +32,14 @@ async def list_experiences(
     return ok(result.model_dump())
 
 
+@router.get("/sources")
+async def list_sources(
+    track: str = Query("product"),
+    user: User = Depends(get_current_user),
+):
+    return ok(experience_service.sources_for_track(track))
+
+
 @router.post("/collect")
 async def collect(
     req: CollectRequest,

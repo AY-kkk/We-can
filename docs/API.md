@@ -15,6 +15,7 @@
 - `GET /me` — 当前用户信息（需 access token）。
 - `POST /forgot-password` — `{email}` → 重置令牌（演示直接返回）。
 - `POST /reset-password` — `{reset_token, new_password}`。
+- `POST /change-password` — `{current_password, new_password}` → 新令牌对（校验旧密码，成功后吊销该用户全部 refresh，其他设备需重新登录）。
 
 ## 管理员 `/api/v1/admin`（需 admin 角色）
 - `GET /dashboard` — 注册/活跃/管理员数、近 7 日新增、各栏目使用量。
@@ -38,5 +39,6 @@
 `GET/POST/PUT /checklist`、`DELETE /checklist/{id}`、`POST /polish-message`（按 user 隔离）。
 
 ## 栏目5 经验 `/api/v1/experience`
-- `GET /?track=&q=&source=` — 多源真实经验帖（50+/方向，带原文链接）。
+- `GET /?track=&q=&source=` — 多源真实经验帖（85/方向，带原文链接，可按 source 过滤）。
+- `GET /sources?track=` — 该方向可选来源及数量（供前端来源筛选）。
 - `POST /collect`、`GET /collected`、`DELETE /collected/{id}`（收藏按 user 隔离）。

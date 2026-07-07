@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { columnHero } from "@/assets";
 import { EmptyState, Spinner } from "@/components/States";
 import { Upload } from "@/components/Upload";
+import { toast } from "@/store/toast";
 
 export default function ReviewPage() {
   const [title, setTitle] = React.useState("面试复盘");
@@ -61,6 +62,9 @@ export default function ReviewPage() {
       const r = await reviewApi.analyze(transcript, title);
       setReport(r);
       await loadHistory();
+      toast.success("复盘报告已生成");
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }

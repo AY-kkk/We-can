@@ -41,3 +41,35 @@ def test_seed_meets_min_50_per_direction():
         assert len(sources) >= 3
         for i in data[track]:
             assert i["url"].startswith("http")
+
+
+@pytest.mark.asyncio
+async def test_sources_endpoint(client):
+    reg = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "src@test.com", "username": "src", "password": "Passw0rd1"},
+    )
+    access = reg.json()["data"]["tokens"]["access_token"]
+    hdr = {"Authorization": f"Bearer {access}"}
+    r = await client.get("/api/v1/experience/sources?track=frontend", headers=hdr)
+    assert r.status_code == 200
+    data = r.json()["data"]
+    assert len(data) >= 3
+    assert all("source" in d and "count" in d for d in data)
+    # counts sum equals per-track total (frontend seeded with 85)
+    assert sum(d["count"] for d in data) >= 50
+
+
+@pytest.mark.asyncio
+async def test_list_filtered_by_source(client):
+    reg = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "srcf@test.com", "username": "srcf", "password": "Passw0rd1"},
+    )
+    access = reg.json()["data"]["tokens"]["access_token"]
+    hdr = {"Authorization": f"Bearer {access}"}
+    r = await client.get("/api/v1/experience?track=frontend&source=小红书", headers=hdr)
+    assert r.status_code == 200
+    items = r.json()["data"]["items"]
+    assert items
+    assert all(it["source"] == "小红书" for it in items)

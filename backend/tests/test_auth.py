@@ -69,3 +69,70 @@ async def test_wrong_password(client):
         "/api/v1/auth/login", json={"email": "wp@test.com", "password": "nope1234"}
     )
     assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_flow(client):
+    reg = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "cp@test.com", "username": "cp", "password": "Passw0rd1"},
+    )
+    access = reg.json()["data"]["tokens"]["access_token"]
+    old_refresh = reg.json()["data"]["tokens"]["refresh_token"]
+    hdr = {"Authorization": f"Bearer {access}"}
+
+    # wrong current password rejected
+    bad = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "nope1234", "new_password": "NewPass99"},
+        headers=hdr,
+    )
+    assert bad.status_code == 400
+
+    # same-as-old rejected
+    same = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "Passw0rd1", "new_password": "Passw0rd1"},
+        headers=hdr,
+    )
+    assert same.status_code == 400
+
+    # weak new password rejected (validation)
+    weak = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "Passw0rd1", "new_password": "short"},
+        headers=hdr,
+    )
+    assert weak.status_code == 422
+
+    # success: returns a fresh token pair
+    okr = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "Passw0rd1", "new_password": "NewPass99"},
+        headers=hdr,
+    )
+    assert okr.status_code == 200
+    assert okr.json()["data"]["access_token"]
+
+    # old refresh token is revoked
+    rf = await client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    assert rf.status_code == 401
+
+    # can log in with the new password; old password fails
+    good = await client.post(
+        "/api/v1/auth/login", json={"email": "cp@test.com", "password": "NewPass99"}
+    )
+    assert good.status_code == 200
+    oldpw = await client.post(
+        "/api/v1/auth/login", json={"email": "cp@test.com", "password": "Passw0rd1"}
+    )
+    assert oldpw.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_change_password_requires_auth(client):
+    r = await client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "x", "new_password": "NewPass99"},
+    )
+    assert r.status_code == 401

@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, Spinner } from "@/components/States";
 import { TrackSwitcher } from "@/components/TrackSwitcher";
 import { useTrackStore } from "@/store/track";
+import { toast } from "@/store/toast";
 import { TRACKS } from "@/theme/tokens";
 
 export default function ExperiencePage() {
@@ -20,36 +21,55 @@ export default function ExperiencePage() {
   const [collected, setCollected] = React.useState<CollectedItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [showFav, setShowFav] = React.useState(false);
+  const [sources, setSources] = React.useState<{ source: string; count: number }[]>([]);
+  const [activeSource, setActiveSource] = React.useState("");
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const [list, fav] = await Promise.all([
-        experienceApi.list(track, q),
+        experienceApi.list(track, q, activeSource),
         experienceApi.collected(),
       ]);
       setItems(list);
       setCollected(fav);
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track]);
+  }, [track, activeSource]);
 
   React.useEffect(() => {
     load();
   }, [load]);
 
+  // 切换方向时，重置来源筛选并加载该方向可选来源
+  React.useEffect(() => {
+    setActiveSource("");
+    experienceApi
+      .sources(track)
+      .then(setSources)
+      .catch(() => setSources([]));
+  }, [track]);
+
   const collectedUrls = new Set(collected.map((c) => c.url));
 
   const toggleCollect = async (item: ExperienceItem) => {
     const existing = collected.find((c) => c.url === item.url);
-    if (existing) {
-      await experienceApi.removeCollected(existing.id);
-      setCollected((prev) => prev.filter((c) => c.id !== existing.id));
-    } else {
-      const saved = await experienceApi.collect(item);
-      setCollected((prev) => [saved, ...prev]);
+    try {
+      if (existing) {
+        await experienceApi.removeCollected(existing.id);
+        setCollected((prev) => prev.filter((c) => c.id !== existing.id));
+        toast.info("已取消收藏");
+      } else {
+        const saved = await experienceApi.collect(item);
+        setCollected((prev) => [saved, ...prev]);
+        toast.success("已收藏，可在「收藏」中查看");
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
@@ -59,7 +79,7 @@ export default function ExperiencePage() {
     <div>
       <PageHeader
         title="经验帖集合"
-        subtitle="按方向聚合真实经验帖（每方向 50+ 条、多平台来源），均附原文链接，支持筛选、搜索与收藏。"
+        subtitle="按方向聚合真实经验帖（每方向 85 条、多平台来源），均附原文链接，支持来源筛选、搜索与收藏。"
         persona="产运导师 Nova · 内容聚合"
         action={
           <img src={assets.heroExperience} alt="" className="hidden h-16 rounded-card sm:block" />
@@ -102,6 +122,35 @@ export default function ExperiencePage() {
               <Bookmark className="h-4 w-4" /> 收藏({collected.length})
             </Button>
           </div>
+
+          {!showFav && sources.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)]">来源：</span>
+              <button
+                onClick={() => setActiveSource("")}
+                className={`rounded-full px-3 py-1 text-xs transition ${
+                  activeSource === ""
+                    ? "bg-brand-600 text-white"
+                    : "bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300"
+                }`}
+              >
+                全部
+              </button>
+              {sources.map((s) => (
+                <button
+                  key={s.source}
+                  onClick={() => setActiveSource(s.source)}
+                  className={`rounded-full px-3 py-1 text-xs transition ${
+                    activeSource === s.source
+                      ? "bg-brand-600 text-white"
+                      : "bg-ink-100 text-ink-600 hover:bg-ink-200 dark:bg-ink-800 dark:text-ink-300"
+                  }`}
+                >
+                  {s.source} ({s.count})
+                </button>
+              ))}
+            </div>
+          )}
         </CardBody>
       </Card>
 

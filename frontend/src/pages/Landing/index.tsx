@@ -9,6 +9,7 @@ import { Input, Label, Select, Textarea } from "@/components/Field";
 import { PageHeader } from "@/components/PageHeader";
 import { columnHero } from "@/assets";
 import { Spinner } from "@/components/States";
+import { toast } from "@/store/toast";
 
 export default function LandingPage() {
   const [items, setItems] = React.useState<ChecklistItem[]>([]);
@@ -35,18 +36,28 @@ export default function LandingPage() {
 
   const add = async () => {
     if (!newTitle.trim()) return;
-    const created = await landingApi.addItem({
-      title: newTitle,
-      category: newCat,
-      is_custom: true,
-    });
-    setItems((prev) => [...prev, created]);
-    setNewTitle("");
+    try {
+      const created = await landingApi.addItem({
+        title: newTitle,
+        category: newCat,
+        is_custom: true,
+      });
+      setItems((prev) => [...prev, created]);
+      setNewTitle("");
+      toast.success("已添加清单项");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const remove = async (id: number) => {
-    await landingApi.deleteItem(id);
-    setItems((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await landingApi.deleteItem(id);
+      setItems((prev) => prev.filter((p) => p.id !== id));
+      toast.info("已删除清单项");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const grouped = items.reduce<Record<string, ChecklistItem[]>>((acc, it) => {
@@ -168,6 +179,9 @@ function MessagePolisher() {
       setResult(
         await landingApi.polishMessage({ message, audience, scenario, channel }),
       );
+      toast.success("话术已润色");
+    } catch (e) {
+      toast.error((e as Error).message);
     } finally {
       setLoading(false);
     }
